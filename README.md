@@ -1,23 +1,113 @@
 # LmsProject
 
-### Kullanılan Teknolojiler
-
-Bu proje aşağıdaki temel teknolojiler kullanılarak geliştirilmiştir:
-
--   Angular
--   HTML / SCSS
--   JSON Server (backend verisi için)
+Modern Angular (v19) Standalone mimarisiyle geliştirilen bir öğrenme yönetim sistemi (LMS) örneği. Arka uç olarak `json-server-auth` ile JWT tabanlı sahte kimlik doğrulama ve veri kaynağı kullanılır. Öğrenci ve Eğitmen rollerine göre kurs görüntüleme, kayıt, yorum ve eğitmen tarafında kurs CRUD akışlarını içerir.
 
 ---
 
-### Gereksinimler
+### Kullanılan Teknolojiler
 
-Projenin başarıyla kurulup çalıştırılması için sisteminizde aşağıdaki yazılımların yüklü olması gerekmektedir:
+- Angular 19 (Standalone Components, `bootstrapApplication`)
+- TypeScript
+- HTML / CSS
+- JSON Server + json-server-auth (JWT tabanlı mock backend)
+- Concurrently (ön-uç ve mock backend’i aynı anda çalıştırma)
+- RxJS
 
--   **Node.js**
--   **Angular CLI**
--   **JSON Server**
--   **npm-run-all**: JSON Server ve Angular'ı birlikte başlatmak için `npm install --save-dev npm-run-all` komutu ile kurulmalıdır.
+---
+
+### Mimari Genel Bakış
+
+- `src/main.ts`: Uygulama `bootstrapApplication(AppComponent, appConfig)` ile başlatılır.
+- `src/app/app.config.ts`:
+  - `provideZoneChangeDetection({ eventCoalescing: true })` ile olay birleştirme (performans için küçük bir iyileştirme)
+  - `provideRouter(routes)` ve `provideHttpClient()`
+- `src/app/app.routes.ts`: Ana sayfa, giriş/kayıt, kurs listesi, kurs detayı ve profil rotaları. `authGuard` ile korunan sayfalar (`/courses`, `/courses/:id`, `/profile`).
+- `src/app/app.component.html`: `tokenStatus` true ise navbar görünür; değilse gizlenir. Durum `NavigationEnd` olaylarında kontrol edilerek güncellenir.
+- Standalone bileşenler: `Home`, `Login`, `Register`, `Courses`, `CoursesItem`, `Profile`, `Navbar` vb.
+
+---
+
+### Veri ve API
+
+- `src/app/utils/apiUrl.ts`:
+  - `baseURL`: `http://localhost:3001/`
+  - Endpoint’ler: `login`, `register`, `users`, `courses`, `logout`, `profile`
+- `db.json`:
+  - `users`: E-posta, hash’lenmiş şifre, ad, soyad, rol (`student`/`instructor`), `id`
+  - `courses`: Kurs başlığı, ikon, açıklama, eğitmen adı/ID, yıldız ve yorum listesi
+- `ApiService`:
+  - Auth: `userLogin`, `userRegister`, `userLogout`, `getCurrentUser`
+  - Kurs: `allCourses`, `getCourseById`, `createCourse`, `updateCourse`, `deleteCourse`
+  - Öğrenci: `getStudentCourses` (localStorage’daki `enrolledCourses` üzerinden)
+  - Eğitmen: `getInstructorCourses`
+  - Arama: `searchCourses`
+  - Yorum: `addComment`, `getCourseComments`
+
+---
+
+### Kimlik Doğrulama ve Guard
+
+- Giriş: `userLogin(email, password)` çağrısı ile `json-server-auth`’tan gelen `accessToken` `localStorage`’a kaydedilir.
+- Kullanıcı bilgisi: `getCurrentUser()` JWT payload’dan `sub` okunarak `/users/:id` isteği yapılır.
+- Guard: `authGuard` `localStorage`’da `accessToken` yoksa `window.location.replace('/')` ile ana sayfaya yönlendirir (bloklama yerine yönlendirme yaklaşımı).
+
+---
+
+### Özellikler ve Akışlar
+
+- Öğrenci:
+  - Kursları listeleme ve arama (`search` query param’ı ile navbar araması senkron)
+  - Kursa kayıt (localStorage: `enrolledCourses`)
+  - Kurstan çıkma
+  - Kurslara yorum ekleme (kurs kaydı `PUT` ile güncellenir)
+- Eğitmen:
+  - Yeni kurs ekleme
+  - Kurs düzenleme
+  - Kurs silme
+- Navbar:
+  - Kullanıcı adı/soyadı gösterimi (JWT ile `getCurrentUser`)
+  - `NavigationEnd` ile URL query `search` senkronizasyonu
+
+---
+
+### Validasyon ve Yardımcılar (utils/valid.ts)
+
+- `emailValid`, `passwordValid` regex kontrolleri
+- `nameValid`, `surnameValid`: Çok kelimeli ad/soyad için TR yerelleştirme ile ilk harfi büyütme (`firstCharUpper`)
+- JWT yardımcıları: `getCurrentUser`, `isUserLoggedIn`, `logout`
+
+---
+
+### Kurulum ve Çalıştırma
+
+Ön koşullar:
+- Node.js ve Angular CLI
+- `json-server-auth` ve `concurrently` (devDependencies içinde mevcut)
+
+Kurulum:
+- `npm install`
+
+Geliştirme sırasında çalıştırma seçenekleri:
+- Tek komutla her iki servis: `npm start`
+  - Arka uç: `http://localhost:3001/`
+  - Ön uç: `http://localhost:4200/`
+- Ayrı ayrı:
+  - Sadece Angular: `npm run start:angular`
+  - Sadece backend: `npm run start:server`
+
+Test:
+- `npm test`
+
+---
+
+### Teknik Notlar (Trick’ler)
+
+- Zone event coalescing: `provideZoneChangeDetection({ eventCoalescing: true })`
+- Guard yönlendirmesi: Token yoksa `window.location.replace('/')`
+- Kayıtlı kurslar localStorage’da tutulur; öğrenci kursları bu ID’lerden REST çağrılarıyla toplanır
+- Navbar arama alanı URL `search` param’ı ile senkronize olur (router events)
+
+---
 
 - İlgili Proje Angular ile tasarlanan bir Eğitim Merkezi.
 - Kullancıların benzersiz bir giriş yapmaları için validasyonlar Email ve password validasyonları oluşturuldu.
