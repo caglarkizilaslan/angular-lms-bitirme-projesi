@@ -1,111 +1,115 @@
-# LmsProject
+# Eğitim Yönetim Sistemi -(LMS -Learning Management System)
 
-Modern Angular (v19) Standalone mimarisiyle geliştirilen bir öğrenme yönetim sistemi (LMS) örneği. Arka uç olarak `json-server-auth` ile JWT tabanlı sahte kimlik doğrulama ve veri kaynağı kullanılır. Öğrenci ve Eğitmen rollerine göre kurs görüntüleme, kayıt, yorum ve eğitmen tarafında kurs CRUD akışlarını içerir.
+![Angular](https://img.shields.io/badge/Angular-19-DD0031?logo=angular&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white) ![RxJS](https://img.shields.io/badge/RxJS-7-B7178C?logo=reactivex&logoColor=white) ![JSON Server](https://img.shields.io/badge/JSON%20Server-auth-000000?logo=json&logoColor=white) ![Standalone](https://img.shields.io/badge/Standalone%20Components-✔️-brightgreen) ![JWT](https://img.shields.io/badge/JWT-Auth-FFB000)
 
----
-
-### Kullanılan Teknolojiler
-
-- Angular 19 (Standalone Components, `bootstrapApplication`)
-- TypeScript
-- HTML / CSS
-- JSON Server + json-server-auth (JWT tabanlı mock backend)
-- Concurrently (ön-uç ve mock backend’i aynı anda çalıştırma)
-- RxJS
+📚 Modern Angular (v19) Standalone mimarisiyle geliştirilen LMS örneği. `json-server-auth` ile JWT tabanlı sahte kimlik doğrulama kullanır; Öğrenci ve Eğitmen rolleri için kurs listeleme, kayıt, yorum ve eğitmen tarafında CRUD akışlarını içerir.
 
 ---
 
-### Mimari Genel Bakış
+## 📖 İçindekiler
+- 🚀 Proje Özeti
+- 🧱 Mimari Genel Bakış
+- 🧩 Veri ve API
+- 🔐 Kimlik Doğrulama ve Guard
+- ✨ Özellikler ve Akışlar
+- ✅ Validasyon ve Yardımcılar
+- ⚙️ Kurulum ve Çalıştırma
+- 🧪 Test
+- ℹ️ Teknik Notlar
+- 🖼️ Ekran Görüntüleri ve Giriş Bilgileri
 
-- `src/main.ts`: Uygulama `bootstrapApplication(AppComponent, appConfig)` ile başlatılır.
+---
+
+## 🚀 Proje Özeti
+- Angular 19 Standalone bileşen yapısı ile başlatma (`bootstrapApplication`).
+- Mock backend: `json-server-auth` + `db.json` (JWT token üretimi ve veri)
+- Roller: 🧑‍🎓 Öğrenci, 🧑‍🏫 Eğitmen
+- Kurs arama, kayıt/çıkış, yorum, eğitmen tarafında kurs oluşturma/düzenleme/silme.
+
+---
+
+## 🧱 Mimari Genel Bakış
+- `src/main.ts`: Uygulama `bootstrapApplication(AppComponent, appConfig)` ile başlar.
 - `src/app/app.config.ts`:
-  - `provideZoneChangeDetection({ eventCoalescing: true })` ile olay birleştirme (performans için küçük bir iyileştirme)
-  - `provideRouter(routes)` ve `provideHttpClient()`
-- `src/app/app.routes.ts`: Ana sayfa, giriş/kayıt, kurs listesi, kurs detayı ve profil rotaları. `authGuard` ile korunan sayfalar (`/courses`, `/courses/:id`, `/profile`).
-- `src/app/app.component.html`: `tokenStatus` true ise navbar görünür; değilse gizlenir. Durum `NavigationEnd` olaylarında kontrol edilerek güncellenir.
-- Standalone bileşenler: `Home`, `Login`, `Register`, `Courses`, `CoursesItem`, `Profile`, `Navbar` vb.
+  - ⚡ `provideZoneChangeDetection({ eventCoalescing: true })`
+  - 🧭 `provideRouter(routes)` ve 🌐 `provideHttpClient()`
+- `src/app/app.routes.ts`: `home`, `login`, `register`, `courses`, `courses/:id`, `profile` rotaları. `authGuard` ile korunan sayfalar: `/courses`, `/courses/:id`, `/profile`.
+- `src/app/app.component.html`: `tokenStatus` true ise `app-navbar` görünür, değilse gizlenir. Durum `NavigationEnd` eventi ile güncellenir.
+- Standalone bileşenler: `Home`, `Login`, `Register`, `Courses`, `CoursesItem`, `Profile`, `Navbar`.
 
 ---
 
-### Veri ve API
-
+## 🧩 Veri ve API
 - `src/app/utils/apiUrl.ts`:
-  - `baseURL`: `http://localhost:3001/`
-  - Endpoint’ler: `login`, `register`, `users`, `courses`, `logout`, `profile`
-- `db.json`:
-  - `users`: E-posta, hash’lenmiş şifre, ad, soyad, rol (`student`/`instructor`), `id`
-  - `courses`: Kurs başlığı, ikon, açıklama, eğitmen adı/ID, yıldız ve yorum listesi
-- `ApiService`:
-  - Auth: `userLogin`, `userRegister`, `userLogout`, `getCurrentUser`
-  - Kurs: `allCourses`, `getCourseById`, `createCourse`, `updateCourse`, `deleteCourse`
-  - Öğrenci: `getStudentCourses` (localStorage’daki `enrolledCourses` üzerinden)
-  - Eğitmen: `getInstructorCourses`
-  - Arama: `searchCourses`
-  - Yorum: `addComment`, `getCourseComments`
+  - 🌍 `baseURL`: `http://localhost:3001/`
+  - 🔗 Endpoint’ler: `login`, `register`, `users`, `courses`, `logout`, `profile`
+- `db.json` veri modeli:
+  - 👤 `users`: email, hash’lenmiş password, name, surname, type (`student`/`instructor`), `id`
+  - 📚 `courses`: title, icon, description, instructor adı/ID, stars, comments (userId, userName, comment, date)
+- `ApiService` özet uç noktalar:
+  - 🔑 Auth: `userLogin`, `userRegister`, `userLogout`, `getCurrentUser`
+  - 📘 Kurs: `allCourses`, `getCourseById`, `createCourse`, `updateCourse`, `deleteCourse`
+  - 🧑‍🎓 Öğrenci: `getStudentCourses` (localStorage `enrolledCourses`)
+  - 🧑‍🏫 Eğitmen: `getInstructorCourses`
+  - 🔎 Arama: `searchCourses`
+  - 💬 Yorum: `addComment`, `getCourseComments`
 
 ---
 
-### Kimlik Doğrulama ve Guard
-
-- Giriş: `userLogin(email, password)` çağrısı ile `json-server-auth`’tan gelen `accessToken` `localStorage`’a kaydedilir.
-- Kullanıcı bilgisi: `getCurrentUser()` JWT payload’dan `sub` okunarak `/users/:id` isteği yapılır.
-- Guard: `authGuard` `localStorage`’da `accessToken` yoksa `window.location.replace('/')` ile ana sayfaya yönlendirir (bloklama yerine yönlendirme yaklaşımı).
-
----
-
-### Özellikler ve Akışlar
-
-- Öğrenci:
-  - Kursları listeleme ve arama (`search` query param’ı ile navbar araması senkron)
-  - Kursa kayıt (localStorage: `enrolledCourses`)
-  - Kurstan çıkma
-  - Kurslara yorum ekleme (kurs kaydı `PUT` ile güncellenir)
-- Eğitmen:
-  - Yeni kurs ekleme
-  - Kurs düzenleme
-  - Kurs silme
-- Navbar:
-  - Kullanıcı adı/soyadı gösterimi (JWT ile `getCurrentUser`)
-  - `NavigationEnd` ile URL query `search` senkronizasyonu
+## 🔐 Kimlik Doğrulama ve Guard
+- 🔒 Giriş: `userLogin(email, password)` → dönen `accessToken` `localStorage`’a yazılır.
+- 👤 Kullanıcı bilgisi: `getCurrentUser()` JWT payload’daki `sub` ile `/users/:id` isteği yapar.
+- 🛡️ Guard: `authGuard` token yoksa `window.location.replace('/')` ile ana sayfaya döndürür.
 
 ---
 
-### Validasyon ve Yardımcılar (utils/valid.ts)
-
-- `emailValid`, `passwordValid` regex kontrolleri
-- `nameValid`, `surnameValid`: Çok kelimeli ad/soyad için TR yerelleştirme ile ilk harfi büyütme (`firstCharUpper`)
-- JWT yardımcıları: `getCurrentUser`, `isUserLoggedIn`, `logout`
+## ✨ Özellikler ve Akışlar
+- 🧑‍🎓 Öğrenci
+  - 📚 Kursları listeleme ve 🔎 arama (navbar araması URL `search` query ile senkron)
+  - ➕ Kursa kayıt (localStorage: `enrolledCourses`)
+  - ➖ Kurstan çıkma
+  - 💬 Kurslara yorum ekleme (kurs kaydı `PUT` ile güncellenir)
+- 🧑‍🏫 Eğitmen
+  - ➕ Yeni kurs ekleme
+  - ✏️ Kurs düzenleme
+  - 🗑️ Kurs silme
+- 🧭 Navbar
+  - 👤 Ad/Soyad gösterimi (`getCurrentUser`)
+  - 🔄 `NavigationEnd` ile URL `search` senkronizasyonu
 
 ---
 
-### Kurulum ve Çalıştırma
+## ✅ Validasyon ve Yardımcılar (`src/app/utils/valid.ts`)
+- 📧 `emailValid`, 🔐 `passwordValid` regex kontrolleri
+- 🪪 `nameValid`, `surnameValid` (TR yerelleştirme; `firstCharUpper`)
+- 🧾 JWT yardımcıları: `getCurrentUser`, `isUserLoggedIn`, `logout`
 
-Ön koşullar:
-- Node.js ve Angular CLI
-- `json-server-auth` ve `concurrently` (devDependencies içinde mevcut)
+---
 
-Kurulum:
-- `npm install`
+## ⚙️ Kurulum ve Çalıştırma
+- Ön koşullar: Node.js, Angular CLI (devDependencies’de `json-server-auth` ve `concurrently` mevcut)
+- 📦 Kurulum:
+  - `npm install`
+- ▶️ Çalıştırma seçenekleri:
+  - Tek komutla her iki servis: `npm start`
+    - Backend: `http://localhost:3001/`
+    - Frontend: `http://localhost:4200/`
+  - Ayrı ayrı:
+    - Sadece Angular: `npm run start:angular`
+    - Sadece backend: `npm run start:server`
 
-Geliştirme sırasında çalıştırma seçenekleri:
-- Tek komutla her iki servis: `npm start`
-  - Arka uç: `http://localhost:3001/`
-  - Ön uç: `http://localhost:4200/`
-- Ayrı ayrı:
-  - Sadece Angular: `npm run start:angular`
-  - Sadece backend: `npm run start:server`
+---
 
-Test:
+## 🧪 Test
 - `npm test`
 
 ---
 
-### Teknik Notlar (Trick’ler)
-
-- Zone event coalescing: `provideZoneChangeDetection({ eventCoalescing: true })`
-- Guard yönlendirmesi: Token yoksa `window.location.replace('/')`
-- Kayıtlı kurslar localStorage’da tutulur; öğrenci kursları bu ID’lerden REST çağrılarıyla toplanır
-- Navbar arama alanı URL `search` param’ı ile senkronize olur (router events)
+## ℹ️ Teknik Notlar
+- ⚡ Zone event coalescing: `provideZoneChangeDetection({ eventCoalescing: true })`
+- 🛡️ Guard yönlendirmesi: Token yoksa `window.location.replace('/')`
+- 🗂️ Kayıtlı kurslar `localStorage`’da tutulur ve ID’ler üzerinden REST çağrıları ile toplanır
+- 🔎 Navbar arama alanı URL `search` param’ı ile senkronize olur (router events)
 
 ---
 
@@ -125,6 +129,65 @@ Mail:caglar@mail.com
 Öğrenci İçin Örnek Giriş Bilgileri
 Mail:ahmet@mail.com
 şifre:Aa12345!
+
+## ⚡ Hızlı Başlangıç
+
+- Gereksinimler:
+  - Node `>=18`, npm `>=9`
+  - Tarayıcıda `localStorage` aktif olmalı
+- Adımlar:
+  1. `npm install`
+  2. `npm start` (iki servis aynı anda başlar)
+  3. Tarayıcı otomatik açılır: `http://localhost:4200/`
+  4. Örnek kullanıcı bilgileriyle giriş yapın ve `Kurslar` sayfasına gidin.
+- Alternatif çalışma:
+  - `npm run start:server` → JSON Server Auth: `http://localhost:3001/`
+  - `npm run start:angular` → Angular dev server: `http://localhost:4200/`
+- Komutlar ve açıklama (package.json):
+  - `start`: `json-server-auth --watch db.json --port 3001` + `ng serve --open`
+  - `start:server`: `json-server-auth --watch db.json --port 3001`
+  - `start:angular`: `ng serve --open`
+- Sık karşılaşılanlar:
+  - Port dolu (`EADDRINUSE`): 3001/4200 kullanımda ise durdurun ya da portu değiştirin.
+  - Giriş başarısız/Token yok: `localStorage` temizleyin, tekrar giriş yapın.
+  - Backend hatası: `db.json` dosyasının proje kökünde olduğundan emin olun.
+- Veri sıfırlama (tarayıcı konsolu):
+  - `localStorage.removeItem('accessToken')`
+  - `localStorage.removeItem('enrolledCourses')`
+- Port değiştirme:
+  - Backend portu: `package.json` içindeki `--port` değerini güncelleyin.
+  - Sonra `src/app/utils/apiUrl.ts` içindeki `baseURL`’i aynı porta çekin.
+
+## 🗺️ Route Haritası
+- `/` → `Home` (public)
+- `/login` → `Login` (public)
+- `/register` → `Register` (public)
+- `/courses` → `Courses` (authGuard)
+- `/courses/:id` → `Course Details` (authGuard)
+- `/profile` → `Profile` (authGuard; rol bazlı görünüm)
+- Arama: `/courses?search=<kelime>` → Navbar araması ile URL query senkron.
+
+Akış Diyagramı:
+`/` → `/login` → `/courses` → `/courses/:id` → `/profile`
+`/login` ↔ `/register`
+
+## 👥 Öğrenci / Eğitmen Akışı
+
+| Akış / Özellik | Öğrenci | Eğitmen |
+|---|---|---|
+| Giriş / Kayıt | ✔️ Giriş yapar, kayıt olabilir | ✔️ Giriş yapar, kayıt olabilir |
+| Kursları Listeleme | ✔️ Tüm kursları görür | ✔️ Kendi kurslarını görür |
+| Arama (Navbar) | ✔️ URL `search` ile senkron | ✔️ URL `search` ile senkron |
+| Kursa Kayıt | ✔️ localStorage `enrolledCourses` | ❌ |
+| Kurstan Çıkma | ✔️ | ❌ |
+| Yorum Ekleme | ✔️ Kurs sayfasında | ✔️ Kurs sayfasında |
+| Kurs Oluşturma | ❌ | ✔️ Form ile ekler |
+| Kurs Düzenleme | ❌ | ✔️ Kursu günceller |
+| Kurs Silme | ❌ | ✔️ Kursu siler |
+| Profil Görünümü | ✔️ Kayıtlı kurslar + ilerleme | ✔️ Oluşturulan kurslar + form |
+| Navbar | ✔️ Ad/Soyad + arama | ✔️ Ad/Soyad + arama |
+
+🖼️ Ekran Görüntüleri
 
 <img width="1401" height="863" alt="giriş ekranıı" src="https://github.com/user-attachments/assets/6922a01b-8943-415e-b0ff-fa6e53eb6006" />
 <img width="1431" height="869" alt="kayıtol ekranı" src="https://github.com/user-attachments/assets/a1786cc7-2a30-4ea4-a1c3-5cd061f56ad7" />
